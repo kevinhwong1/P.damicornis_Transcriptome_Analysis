@@ -1,0 +1,8 @@
+# P. damicornis TGA transcriptome analysis
+## Author: Kevin Wong
+## Last updated: April 12, 2018
+
+Data uploaded and analyzed on KITT (add in KITT description)
+
+### Uploading data to KITT
+scp -r -P 2292 /Volumes/NGS_DATA/Hawaii_Pdam/Pdam_Summer_2011/Pdam_2011_Raw/ kwong@kitt.uri.edu:/home/kwong/Final_Project/raw
