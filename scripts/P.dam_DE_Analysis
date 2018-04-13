@@ -4,5 +4,41 @@
 
 Data uploaded and analyzed on KITT (add in KITT description)
 
-### Uploading data to KITT
-scp -r -P 2292 /Volumes/NGS_DATA/Hawaii_Pdam/Pdam_Summer_2011/Pdam_2011_Raw/ kwong@kitt.uri.edu:/home/kwong/Final_Project/raw
+### Uploading raw data to KITT
+`scp -r -P 2292 /Volumes/NGS_DATA/Hawaii_Pdam/Pdam_Summer_2011/Pdam_2011_Raw/ kwong@kitt.uri.edu:/home/kwong/Final_Project/raw`
+
+### Uploading reference P.dam transcriptome to KITT
+`scp -P 2292 P_damicornis_transcriptome_Seneca2015.fasta kwong@kitt.uri.edu:Final_Project/raw`
+
+### Getting all files into one directory
+`[kwong@KITT Final_Project]$ cd raw/
+[kwong@KITT raw]$ cd Pdam_2011_Raw/
+[kwong@KITT Pdam_2011_Raw]$ cd ..
+[kwong@KITT raw]$ mkdir allraw
+[kwong@KITT raw]$ cd Pdam_2011_Raw/
+[kwong@KITT Pdam_2011_Raw]$ grep -rl --null --include '*.fastq.gz' . | xargs -0r cp -t ../allraw`
+
+### Checking the files downloaded correctly (checksum)
+`scp -P 2292 Hawaii_Pacuta_checksum.md5 kwong@kitt.uri.edu:Final_Project/raw/allraw
+md5sum *.fastq.gz > Hawaii_Pacuta_checksum2.md5`
+
+`cksum Hawaii_Pacuta_checksum.md5 Hawaii_Pacuta_checksum2.md5`
+
+485158896 4880 Hawaii_Pacuta_checksum.md5
+485158896 4880 Hawaii_Pacuta_checksum2.md
+
+### Concatenating extended files
+`cat 1026_CGATGT_L003_R1_001.fastq.gz 1026_CGATGT_L003_R1_002.fastq.gz > 1026_CGATGT_L003_R1_003.fastq.gz` #combining files that were split during sequencing
+`wc -l 1026_CGATGT_L003_R1_001.fastq.gz` #checking lengths of files to make sure they added correctly
+**1830499** 1026_CGATGT_L003_R1_001.fastq.gz
+`wc -l 1026_CGATGT_L003_R1_002.fastq.gz`
+**237763** 1026_CGATGT_L003_R1_002.fastq.gz
+`1026_CGATGT_L003_R1_003.fastq.gz`
+**2068262** 1026_CGATGT_L003_R1_003.fastq.gz  #it all adds up!
+
+### Moving segmented files to a different folder
+
+
+### Quality control of raw sequencing reads (FASTQC)
+mkdir fastqc_results
+conda install -c bioconda fastqc #installing fastqc
