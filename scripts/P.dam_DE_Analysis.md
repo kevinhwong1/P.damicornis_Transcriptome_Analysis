@@ -421,6 +421,8 @@ HISAT2 PE /home/kwong/Final_Project/raw/allraw/fullreads/cleaned_reads/1026_CGAT
 ### Convert SAM to BAM using SAMTools (Script from E. Roberts)
 https://github.com/erinroberts/apoptosis_data_pipeline/blob/master/Streamlined%20Pipeline%20Tutorial/Apoptosis_Pipeline_Tutorial_with_Reduced_Dataset.Rmd
 
+`conda install samtools`
+
 `nano sambam.sh`
 
 ```
@@ -442,7 +444,7 @@ array4=($(ls $F/*.bam))
 	for i in ${array4[@]}; do
 		samtools flagstat ${i} > ${i}.bam.stats #get % mapped
 	#to extract more detailed summary numbers
-		samtools stats {i} | grep ^SN | cut -f 2- > ${i}.bam.fullstat
+		samtools stats ${i} | grep ^SN | cut -f 2- > ${i}.bam.fullstat
 		echo "STATS DONE" $(date)
 	done
 ```
@@ -450,6 +452,8 @@ array4=($(ls $F/*.bam))
 
 ### Assemble reads to reference using Stringtie (Script from E. Roberts)
 https://github.com/erinroberts/apoptosis_data_pipeline/blob/master/Streamlined%20Pipeline%20Tutorial/Apoptosis_Pipeline_Tutorial_with_Reduced_Dataset.Rmd
+
+`conda install -c bioconda stringtie `
 
 `nano stringtie.sh`
 
@@ -483,8 +487,8 @@ cat P_dam_mergelist.txt
 
 #Run StringTie merge, merge transcripts from all samples (across all experiments, not just for a single experiment)
 
-stringtie --merge -A -o P_dam_stringtie_merged.gtf P_dam_mergelist.txt
-#-A here creates a gene table output with genomic locations and compiled information that I will need later to fetch gene sequences
+stringtie --merge -o $F/P_dam_stringtie_merged.gtf $F/P_dam_mergelist.txt
+#-A here creates a gene table output with genomic locations and compiled information that I will need later to fetch gene sequences (need annotation file)
 #FROM MANUAL: "If StringTie is run with the -A <gene_abund.tab> option, it returns a file containing gene abundances. "
 #-G is a flag saying to use the .gff annotation file
 
@@ -499,3 +503,30 @@ stringtie --merge -A -o P_dam_stringtie_merged.gtf P_dam_mergelist.txt
 
 echo "DONE" $(date)
 ```
+
+`bash stringtie.sh`
+
+### Prepare StringTie output for DESeq2
+
+wget https://ccb.jhu.edu/software/stringtie/dl/prepDE.py
+conda install python=2.7
+
+`nano prepDESeq2.sh`
+
+```
+#!/bin/bash
+
+F=/home/kwong/Final_Project/raw/allraw/fullreads/cleaned_reads
+
+array2=($(ls *R1_cleaned.merge.gtf))
+
+for i in ${array2[@]}; do
+	echo "$(echo ${i}|sed "s/\_R1_cleaned..*//") $F/${i}" >> $F/Pdam_sample_list.txt
+done
+
+python $F/prepDE.py -i $F/Pdam_sample_list.txt
+
+echo "STOP" $(date)
+```
+
+`bash prepDESeq2.sh`
