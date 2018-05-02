@@ -133,12 +133,12 @@ PCA.plot <- plotPCA(rsig, intgroup = c("Treatment")) #Plot PCA of all samples fo
 PCA.plot #view plot
 PC.info <-PCA.plot$data #extract plotting data
 pdf(file="PCA.DEG.pdf")
-plot(PC.info$PC1, PC.info$PC2, xlim=c(-30,30), ylim=c(-16, 10), xlab="PC1 86%", ylab="PC2 5%", col = c("lightpink2", "steelblue1","yellow3")[as.numeric(PC.info$Treatment)], pch=c(16, 17)[as.numeric(PC.info$Released)], cex=1.3)
+plot(PC.info$PC1, PC.info$PC2, xlim=c(-30,30), ylim=c(-16, 10), xlab="PC1 86%", ylab="PC2 5%", col = c("lightpink2", "steelblue1")[as.numeric(PC.info$Treatment)],)
 legend(x="top", 
        bty="n",
-       legend = c("Ambient", "High", "No Release", "Released"),
-       text.col = c("lightpink2","steelblue1","yellow3", "black", "black"),
-       pch = c(15, 15, 16, 17),
+       legend = c("Ambient", "High"),
+       text.col = c("lightpink2","steelblue1"),
+       pch = c(15, 15),
        col = c("white","white", "black", "black"),
        cex=1)
 #dev.off()
@@ -146,12 +146,15 @@ legend(x="top",
 topVarGenes <- head(order(rowVars(assay(rsig)),decreasing=TRUE),sig.num) #sort by decreasing sig
 mat <- assay(rsig)[ topVarGenes, ] #make an expression object
 mat <- mat - rowMeans(mat) #difference in expression compared to average across all samples
-
+col.order <- c("1028","1034", "1038", "1040", "H11", "H12", "H2", "H4", "H5", "H6", "H7",
+               "1026", "1030", "1032", "1036", "1042", "1044", "H1", "H10", "H3", "H8", "H9")
+mat <- mat[,col.order]
 df <- as.data.frame(colData(rsig)[c("Treatment")]) #make dataframe
-df <- df[order(df$Treatment),]
-df <- df[[1]]
+#df <- df[order(df$Treatment),]
+
 #pdf(file="DEG_Heatmap.pdf")
-pheatmap(mat, annotation_col = df, clustering_method = "average", 
-         clustering_distance_rows="euclidean", show_rownames =FALSE, cluster_cols=TRUE,
+PMAT<- pheatmap(mat, annotation_col = df, clustering_method = "average",
+         clustering_distance_rows="euclidean", show_rownames =FALSE, cluster_cols=FALSE,
          show_colnames =FALSE) #plot heatmap of all DEG by group
 #dev.off()
+
