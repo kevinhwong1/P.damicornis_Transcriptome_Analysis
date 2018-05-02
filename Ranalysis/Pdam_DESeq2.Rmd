@@ -1,0 +1,60 @@
+---
+title: "Pdam_DESeq2"
+author: "Kevin Wong"
+date: "4/27/2018"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This script is for determining differential expression of transcriptomic reads using DESeq2. The data used in this script is from an experiment using 22 PE transcriptomes of Pocillopora damicornis under ambient and high temperature and PCO2 conditions during reproduction (see readme). Prior to this script, the data that trimmed and aligned to a reference transcriptome (see P.dam_DE_Analysis.md). This script is modified from E. Roberts (https://github.com/erinroberts/apoptosis_data_pipeline/blob/master/DESeq2/C_VIRGINICA_PIPELINE/05_C_Vir_Bac_DESeq2.R)
+
+## Installing Packages
+
+```{r install}
+#call the DESeq2 library 
+source("http://bioconductor.org/biocLite.R")
+#biocLite("BiocUpgrade") 
+biocLite("DESeq2")
+library("DESeq2")
+#install.packages("fdrtool")
+library(fdrtool)
+source("https://bioconductor.org/biocLite.R")
+#install.packages("dplyr")
+library(dplyr)
+#install.packages("tidyr")
+library(tidyr)
+#install.packages("reshape2")
+library(reshape2)
+library(ggplot2)
+install.packages("tm")
+library(tm)
+```
+
+## Loading and prepping data
+
+```{r load, echo=TRUE}
+
+#Read in stringtie merged file
+Pdam_stringtie <- read.csv(file= "../P_dam_stringtie_merged.gtf", sep="\t", header = FALSE)
+
+#set colnames for the attributes
+colnames(Pdam_stringtie) <- c('seqname', 'source', 'feature','start','end','score','strand','frame', 'attribute')
+
+#subset for just transcript lines
+Pdam_stringtie_transcripts <- Pdam_stringtie %>% filter(feature =="transcript")
+
+
+####DEG Analysis with TRANSCRIPT Count Matrix ####
+#load transcript count matrix and labels
+#Pdam_2011_sample_info.csv file contains metadata on the count table's samples
+###Make sure excel sample info is in the same order or these commands will change data to be wrong!!!!###
+
+#Extract correct rows and columns from the PHENO DATA and transcript data
+Pdam_TranscriptCountData <- as.data.frame(read.csv("../transcript_count_matrix.csv", row.names="transcript_id"))
+head(Pdam_TranscriptCountData)
+```
+
+

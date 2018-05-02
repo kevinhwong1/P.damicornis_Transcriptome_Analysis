@@ -1,6 +1,6 @@
 # *P. damicornis* TGA transcriptome analysis
-## Author: Kevin Wong
-## Last updated: April 12, 2018
+Author: Kevin Wong
+Last updated: April 12, 2018
 
 Data uploaded and analyzed on KITT (add in KITT description)
 
@@ -508,8 +508,8 @@ echo "DONE" $(date)
 
 ### Prepare StringTie output for DESeq2
 
-wget https://ccb.jhu.edu/software/stringtie/dl/prepDE.py
-conda install python=2.7
+`wget https://ccb.jhu.edu/software/stringtie/dl/prepDE.py`  
+`conda install python=2.7`
 
 `nano prepDESeq2.sh`
 
@@ -530,3 +530,12 @@ echo "STOP" $(date)
 ```
 
 `bash prepDESeq2.sh`
+
+### Using remote RStudio to perform DESeq2 Analysis
+In web browser: http://kitt.uri.edu:8787/ and log into KITT
+
+See Pdam_DESeq2.md for further analysis
+
+```
+scp -r -P 2292 /Users/kevinwong/Documents/Projects/P.damicornis_Transcriptome_Analysis/Data/Pdam_2011_sample_info.csv kwong@kitt.uri.edu:/home/kwong/Final_Project/raw/allraw/fullreads/cleaned_reads/P_Dam_Transcriptome
+```
