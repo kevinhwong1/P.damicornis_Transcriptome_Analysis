@@ -656,7 +656,7 @@ pheatmap(sampleDistMatrix, #plot matrix of expression similarity
          col=colors) #set colors
 dev.off()
 ```
-![EV Heatmap](https://github.com/kevinhwong1/P.damicornis_Transcriptome_Analysis/tree/master/Output/
+![EVHeatmap](https://github.com/kevinhwong1/P.damicornis_Transcriptome_Analysis/blob/master/Output/heatmapEV.jpg) 
 
 #### Plotting PCA from Expression visualization
 ```
