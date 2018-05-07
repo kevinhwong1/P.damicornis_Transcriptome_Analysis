@@ -604,12 +604,21 @@ Pdam_stringtie_transcripts <- Pdam_stringtie %>% filter(feature =="transcript")
 Pdam_TranscriptCountData <- as.data.frame(read.csv("../transcript_count_matrix.csv", row.names="transcript_id"))
 head(Pdam_TranscriptCountData)
 
-#filtering values for PoverA
-filt <- filterfun(pOverA(0.25,5)) #set filter values for PoverA, P percent of the samples have counts over A
-tfil <- genefilter(Pdam_TranscriptCountData, filt) #create filter for the counts data
-keep <- Pdam_TranscriptCountData[tfil,] #identify transcripts to keep by count filter
-gn.keep <- rownames(keep) #identify transcript list
-counts.5x <- as.matrix(Pdam_TranscriptCountData[which(rownames(Pdam_TranscriptCountData) %in% gn.keep),]) #data filtered in PoverA, P percent of the samples have counts over A
+###filtering values for PoverA
+#set filter values for PoverA, P percent of the samples have counts over A
+filt <- filterfun(pOverA(0.25,5))
+
+#create filter for the counts data
+tfil <- genefilter(Pdam_TranscriptCountData, filt)
+
+#identify transcripts to keep by count filter
+keep <- Pdam_TranscriptCountData[tfil,]
+
+#identify transcript list
+gn.keep <- rownames(keep)
+
+#data filtered in PoverA, P percent of the samples have counts over A
+counts.5x <- as.matrix(Pdam_TranscriptCountData[which(rownames(Pdam_TranscriptCountData) %in% gn.keep),])
 write.csv(counts.5x, file="filtered_counts.csv")
 
 Pdam_sample_ColData <- read.csv("Pdam_2011_sample_info.csv", header=TRUE, sep=",")
@@ -638,25 +647,37 @@ levels(Pdam_sample_ColData$Treatment)
 * layout used for interactions: https://support.bioconductor.org/p/58162/
 
 ```
-rld <- rlog(ddsS4, blind=FALSE) #apply a regularized log transformation to minimize effects of small counts and normalize wrt library size
+#apply a regularized log transformation to minimize effects of small counts and normalize wrt library size
+rld <- rlog(ddsS4, blind=FALSE)
 head(assay(rld), 3) #view data
-sampleDists <- dist(t(assay(rld))) #calculate distance matix
-sampleDistMatrix <- as.matrix(sampleDists) #distance matrix
-rownames(sampleDistMatrix) <- colnames(rld) #assign row names
-colnames(sampleDistMatrix) <- NULL #assign col names
-colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255) #assign colors
-pdf(file="heatmapEV.pdf")
+
+#calculate distance matix
+sampleDists <- dist(t(assay(rld)))
+
+#distance matrix
+sampleDistMatrix <- as.matrix(sampleDists)
+
+#assign row names
+rownames(sampleDistMatrix) <- colnames(rld)
+
+#assign col names
+colnames(sampleDistMatrix) <- NULL
+
+#assign colors
+colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+
 ```
 
 #### Plotting heatmap for Expression Visualization
 ```
+pdf(file="heatmapEV.pdf")
 pheatmap(sampleDistMatrix, #plot matrix of expression similarity
          clustering_distance_rows=sampleDists, #cluster rows
          clustering_distance_cols=sampleDists, #cluster columns
          col=colors) #set colors
 dev.off()
 ```
-![EVHeatmap](https://github.com/kevinhwong1/P.damicornis_Transcriptome_Analysis/blob/master/Output/heatmapEV.jpg) 
+![EVHeatmap](https://github.com/kevinhwong1/P.damicornis_Transcriptome_Analysis/blob/master/Output/heatmapEV.jpg)
 
 #### Plotting PCA from Expression visualization
 ```
@@ -664,5 +685,75 @@ pdf(file="PCAEV.pdf")
 plotPCA(rld, intgroup = c("Treatment")) #plot PCA of samples with all data
 dev.off()
 ```
+![EVPCA](https://github.com/kevinhwong1/P.damicornis_Transcriptome_Analysis/blob/master/Output/PCAEV.jpg)
 
-$$$$add in figure
+#### Differential Gene Expression Analysis
+* Interaction Test: test of the factor of "group" with all combinations of the original factors as groups
+
+```
+#run differential expression test by group using the wald test
+DEG.int <- DESeq(ddsS4)
+
+#save DE results
+DEG.int.res <- results(DEG.int)
+
+#view DE results
+resultsNames(DEG.int)
+
+#identify the number of significant p values with 5%FDR (padj<0.05)
+sig.num <- sum(DEG.int.res$padj <0.05, na.rm=T)
+
+#identify signficant pvalues with 5%FDR
+sig <- subset(DEG.int.res, padj<0.05,)
+
+#subset list of sig transcripts from original count data
+sig.list <- ddsS4[which(rownames(ddsS4) %in% rownames(sig)),]
+
+#apply a regularized log transformation to minimize effects of small counts and normalize wrt library size
+rsig <- rlog(sig.list, blind=FALSE)
+write.csv(counts(sig.list), file="DEG_5FDR.all.csv")
+```
+
+#### Plotting DEG PCA
+```
+PCA.plot <- plotPCA(rsig, intgroup = c("Treatment")) #Plot PCA of all samples for DEG only
+PCA.plot #view plot
+PC.info <-PCA.plot$data #extract plotting data
+pdf(file="PCA.DEG.pdf")
+plot(PC.info$PC1, PC.info$PC2, xlim=c(-30,30), ylim=c(-16, 10), xlab="PC1 86%", ylab="PC2 5%", col = c("lightpink2", "steelblue1")[as.numeric(PC.info$Treatment)],)
+legend(x="top",
+       bty="n",
+       legend = c("Ambient", "High"),
+       text.col = c("lightpink2","steelblue1"),
+       pch = c(15, 15),
+       col = c("white","white", "black", "black"),
+       cex=1)
+dev.off()
+```
+![DEGPCA](https://github.com/kevinhwong1/P.damicornis_Transcriptome_Analysis/blob/master/Output/PCA.DEG.jpg)
+
+#### Plotting DEG heatmap
+```
+#sort by decreasing sig
+topVarGenes <- head(order(rowVars(assay(rsig)),decreasing=TRUE),sig.num)
+
+#make an expression object
+mat <- assay(rsig)[ topVarGenes, ]
+
+#difference in expression compared to average across all samples
+mat <- mat - rowMeans(mat)
+
+#ordering columns by treatment
+col.order <- c("1028","1034", "1038", "1040", "H11", "H12", "H2", "H4", "H5", "H6", "H7", "1026", "1030", "1032", "1036", "1042", "1044", "H1", "H10", "H3", "H8", "H9")
+mat <- mat[,col.order]
+
+#make dataframe
+df <- data.frame(colData(rsig)[c("Treatment")])
+
+pdf(file="DEG_Heatmap.pdf")
+PMAT<- pheatmap(mat, annotation_col = df, clustering_method = "average",
+         clustering_distance_rows="euclidean", show_rownames =FALSE, cluster_cols=FALSE,
+         show_colnames =FALSE) #plot heatmap of all DEG by group
+dev.off()
+```
+![DEGHeatmap](https://github.com/kevinhwong1/P.damicornis_Transcriptome_Analysis/blob/master/Output/DEG_Heatmap.jpg)
