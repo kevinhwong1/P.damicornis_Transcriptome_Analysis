@@ -531,11 +531,138 @@ echo "STOP" $(date)
 
 `bash prepDESeq2.sh`
 
-### Using remote RStudio to perform DESeq2 Analysis
-In web browser: http://kitt.uri.edu:8787/ and log into KITT
-
-See Pdam_DESeq2.md for further analysis
+#### Uploading sample information to KITT
 
 ```
 scp -r -P 2292 /Users/kevinwong/Documents/Projects/P.damicornis_Transcriptome_Analysis/Data/Pdam_2011_sample_info.csv kwong@kitt.uri.edu:/home/kwong/Final_Project/raw/allraw/fullreads/cleaned_reads/P_Dam_Transcriptome
 ```
+
+## Using remote RStudio to perform DESeq2 Analysis
+* In web browser: http://kitt.uri.edu:8787/ and log into KITT
+* All of the following commands will be executed in RStudio
+* Scripts are modified from E. Roberts and H. Putnam
+
+#### Load in packages
+```
+#call the DESeq2 library
+source("http://bioconductor.org/biocLite.R")
+biocLite("BiocUpgrade")
+biocLite("DESeq2")
+library("DESeq2")
+#install.packages("fdrtool")
+library(fdrtool)
+#install.packages("dplyr")
+library(dplyr)
+#install.packages("tidyr")
+library(tidyr)
+#install.packages("reshape2")
+library(reshape2)
+library(ggplot2)
+#install.packages("tm")
+#library(tm)
+library(genefilter)
+#install.packages("pheatmap")
+library(pheatmap)
+#install.packages("RColorBrewer")
+library(RColorBrewer)
+library(limma)
+library(spdep)
+library(adegenet)
+biocLite("GSEABase")
+#library(GSEABase)
+biocLite("pathview")
+#library("pathview")
+biocLite("goseq")
+#library("goseq")
+library("GO.db")
+#devtools::install_github("hms-dbmi/UpSetR")
+library("UpSetR")
+library("reshape2")
+library(lattice)
+library(latticeExtra)
+```
+
+#### Reading in files
+
+```
+#Read in stringtie merged file
+Pdam_stringtie <- read.csv(file= "../P_dam_stringtie_merged.gtf", sep="\t", header = FALSE)
+
+#set colnames for the attributes
+colnames(Pdam_stringtie) <- c('seqname', 'source', 'feature','start','end','score','strand','frame', 'attribute')
+
+#subset for just transcript lines
+Pdam_stringtie_transcripts <- Pdam_stringtie %>% filter(feature =="transcript")
+```
+
+#### DEG Analysis with TRANSCRIPT Count Matrix
+* Pdam_2011_sample_info.csv file contains metadata on the count table's samples  
+* Make sure excel sample info is in the same order or these commands will change data to be wrong
+
+```
+#Extract correct rows and columns from the PHENO DATA and transcript data
+Pdam_TranscriptCountData <- as.data.frame(read.csv("../transcript_count_matrix.csv", row.names="transcript_id"))
+head(Pdam_TranscriptCountData)
+
+#filtering values for PoverA
+filt <- filterfun(pOverA(0.25,5)) #set filter values for PoverA, P percent of the samples have counts over A
+tfil <- genefilter(Pdam_TranscriptCountData, filt) #create filter for the counts data
+keep <- Pdam_TranscriptCountData[tfil,] #identify transcripts to keep by count filter
+gn.keep <- rownames(keep) #identify transcript list
+counts.5x <- as.matrix(Pdam_TranscriptCountData[which(rownames(Pdam_TranscriptCountData) %in% gn.keep),]) #data filtered in PoverA, P percent of the samples have counts over A
+write.csv(counts.5x, file="filtered_counts.csv")
+
+Pdam_sample_ColData <- read.csv("Pdam_2011_sample_info.csv", header=TRUE, sep=",")
+print(Pdam_sample_ColData)
+
+#change rownames to match
+rownames(Pdam_sample_ColData) <- Pdam_sample_ColData$Sample.ID
+colnames(counts.5x) <- Pdam_sample_ColData$Sample.ID
+head(Pdam_sample_ColData)
+head(counts.5x)
+
+# Check all sample IDs in Pdam_sample_ColData are also in Pdam_TranscriptCountData and match their orders
+all(rownames(Pdam_sample_ColData) %in% colnames(counts.5x))  #Should return TRUE
+# returns TRUE
+all(rownames(Pdam_sample_ColData) == colnames(counts.5x))    # should return TRUE
+#returns TRUE
+
+#give the treatment column levels
+Pdam_sample_ColData$Treatment <- factor(Pdam_sample_ColData$Treatment)
+levels(Pdam_sample_ColData$Treatment)
+```
+
+#### Construct DESeq dataset from matrix
+* DESeqDataSet from count matrix and labels, separate into resistant and susceptible
+* add an interaction term to compare treatment between two conditions
+* layout used for interactions: https://support.bioconductor.org/p/58162/
+
+```
+rld <- rlog(ddsS4, blind=FALSE) #apply a regularized log transformation to minimize effects of small counts and normalize wrt library size
+head(assay(rld), 3) #view data
+sampleDists <- dist(t(assay(rld))) #calculate distance matix
+sampleDistMatrix <- as.matrix(sampleDists) #distance matrix
+rownames(sampleDistMatrix) <- colnames(rld) #assign row names
+colnames(sampleDistMatrix) <- NULL #assign col names
+colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255) #assign colors
+pdf(file="heatmapEV.pdf")
+```
+
+#### Plotting heatmap for Expression Visualization
+```
+pheatmap(sampleDistMatrix, #plot matrix of expression similarity
+         clustering_distance_rows=sampleDists, #cluster rows
+         clustering_distance_cols=sampleDists, #cluster columns
+         col=colors) #set colors
+dev.off()
+```
+![EV Heatmap](https://github.com/kevinhwong1/P.damicornis_Transcriptome_Analysis/tree/master/Output/
+
+#### Plotting PCA from Expression visualization
+```
+pdf(file="PCAEV.pdf")
+plotPCA(rld, intgroup = c("Treatment")) #plot PCA of samples with all data
+dev.off()
+```
+
+$$$$add in figure
