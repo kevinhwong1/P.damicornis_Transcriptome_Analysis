@@ -785,3 +785,53 @@ PMAT<- pheatmap(mat, annotation_col = df, clustering_method = "average",
 dev.off()
 ```
 ![DEGHeatmap](https://github.com/kevinhwong1/P.damicornis_Transcriptome_Analysis/blob/master/Output/DEG_Heatmap.jpg)
+
+## Annotation with Trionotate
+
+Using pipelines from https://informatics.fas.harvard.edu/trinotate-workflow-example-on-odyssey.html, https://trinotate.github.io/, and H. Putnam Monitpora spawning
+
+#### Getting required software
+
+`mkdir annotation`
+
+Download and uncompress Trinotate, Transdecoder, SQLite, NCBI BLAST+, HMMER,
+```
+wget https://github.com/Trinotate/Trinotate/archive/Trinotate-v3.1.1.tar.gz -O Trinotate-v3.1.1.tar.gz
+tar xvf Trinotate-v3.1.1.tar.gz
+
+wget https://github.com/TransDecoder/TransDecoder/archive/TransDecoder-v5.3.0.tar.gz -O TransDecoder-v5.3.0.tar.gz
+tar xvf TransDecoder-v5.3.0.tar.gz
+
+wget https://www.sqlite.org/2018/sqlite-tools-linux-x86-3240000.zip -O sqlite-tools-linux-x86-3240000.zip
+unzip sqlite-tools-linux-x86-3240000.zip
+
+wget ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/ncbi-blast-2.7.1+-x64-linux.tar.gz -O ncbi-blast-2.7.1+-x64-linux.tar.gz
+tar xvf ncbi-blast-2.7.1+-x64-linux.tar.gz
+
+wget http://eddylab.org/software/hmmer/hmmer.tar.gz -O hmmer.tar.gz
+tar xvf hmmer.tar.gz
+
+wget http://www.cbs.dtu.dk/download/C4E1319A-6B3D-11E8-8678-5A6A465A7DCF/signalp-4.1f.Linux.tar.gz -O signalp-4.1f.Linux.tar.gz
+tar xvf signalp-4.1f.Linux.tar.gz
+```
+#### Loading required databases
+
+`Trinotate-Trinotate-v3.1.1/admin/Build_Trinotate_Boilerplate_SQLite_db.pl  Trinotate`
+
+and once it completes, it will provide to you:
+```
+Trinotate.sqlite
+uniprot_sprot.pep
+Pfam-A.hmm.gz ## did not lodf for me
+```
+
+Prepare the protein database for blast searches by:  
+`ncbi-blast-2.7.1+/bin/makeblastdb -in uniprot_sprot.pep -dbtype prot`
+
+Loading pfam manually becuase it didnt load when I ran the boilerplate
+```
+wget ftp://ftp.ebi.ac.uk/pub/databases/Pfam/current_release/Pfam-A.hmm.gz -O Pfam-A.hmm.gz
+gunzip Pfam-A.hmm.gz
+conda install hmmer
+hmmpress Pfam-A.hmm
+```
