@@ -786,6 +786,7 @@ dev.off()
 ```
 ![DEGHeatmap](https://github.com/kevinhwong1/P.damicornis_Transcriptome_Analysis/blob/master/Output/DEG_Heatmap.jpg)
 
+
 ## Annotation with Trionotate
 
 Using pipelines from https://informatics.fas.harvard.edu/trinotate-workflow-example-on-odyssey.html, https://trinotate.github.io/, and H. Putnam Monitpora spawning
@@ -794,7 +795,7 @@ Using pipelines from https://informatics.fas.harvard.edu/trinotate-workflow-exam
 
 `mkdir annotation`
 
-Download and uncompress Trinotate, Transdecoder, SQLite, NCBI BLAST+, HMMER,
+Download and uncompress Trinotate, Transdecoder, SQLite, NCBI BLAST+, HMMER, and Signalp
 ```
 wget https://github.com/Trinotate/Trinotate/archive/Trinotate-v3.1.1.tar.gz -O Trinotate-v3.1.1.tar.gz
 tar xvf Trinotate-v3.1.1.tar.gz
@@ -818,20 +819,31 @@ tar xvf signalp-4.1f.Linux.tar.gz
 
 `Trinotate-Trinotate-v3.1.1/admin/Build_Trinotate_Boilerplate_SQLite_db.pl  Trinotate`
 
-and once it completes, it will provide to you:
+and once it completes, it will provide you with:
 ```
 Trinotate.sqlite
 uniprot_sprot.pep
-Pfam-A.hmm.gz ## did not lodf for me
+Pfam-A.hmm.gz ## did not load for me
 ```
 
 Prepare the protein database for blast searches by:  
 `ncbi-blast-2.7.1+/bin/makeblastdb -in uniprot_sprot.pep -dbtype prot`
 
-Loading pfam manually becuase it didnt load when I ran the boilerplate
+Loading pfam manually because it didn't load when I ran the boilerplate
 ```
 wget ftp://ftp.ebi.ac.uk/pub/databases/Pfam/current_release/Pfam-A.hmm.gz -O Pfam-A.hmm.gz
 gunzip Pfam-A.hmm.gz
 conda install hmmer
 hmmpress Pfam-A.hmm
 ```
+
+#### Run the Blast and Pfam searches
+
+##### Search Trinity transcripts (blastx)
+`nohup ncbi-blast-2.7.1+/bin/blastx -query ../P_damicornis_transcriptome_Seneca2015.fasta -db uniprot_sprot.pep -num_threads 40 -max_target_seqs 1 -outfmt 6 > blastx.outfmt6` #started 20180611 08:58
+
+##### Search Transdecoder-predicted proteins
+conda install transdecoder
+`TransDecoder.LongOrfs -t ../P_damicornis_transcriptome_Seneca2015.fasta`
+
+`nohup ncbi-blast-2.7.1+/bin/blastp -query P_damicornis_transcriptome_Seneca2015.fasta.transdecoder_dir/longest_orfs.pep -db uniprot_sprot.pep -num_threads 40 -max_target_seqs 1 -outfmt 6 > blastp.outfmt6`
