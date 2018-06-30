@@ -835,15 +835,59 @@ wget ftp://ftp.ebi.ac.uk/pub/databases/Pfam/current_release/Pfam-A.hmm.gz -O Pfa
 gunzip Pfam-A.hmm.gz
 conda install hmmer
 hmmpress Pfam-A.hmm
+
 ```
 
-#### Run the Blast and Pfam searches
+### Run the Blast and Pfam searches
 
 ##### Search Trinity transcripts (blastx)
-`nohup ncbi-blast-2.7.1+/bin/blastx -query ../P_damicornis_transcriptome_Seneca2015.fasta -db uniprot_sprot.pep -num_threads 40 -max_target_seqs 1 -outfmt 6 > blastx.outfmt6` #started 20180611 08:58
+`nohup ncbi-blast-2.7.1+/bin/blastx -query ../P_damicornis_transcriptome_Seneca2015.fasta -db uniprot_sprot.pep -num_threads 20 -max_target_seqs -outfmt 6 > blastx.outfmt6 & disown` #started 20180626 21:30
 
-##### Search Transdecoder-predicted proteins
-conda install transdecoder
+To check the status, use `ps gv`
+- PID is 38939
+
+Alternatively, you can check the end of the file to see when it stops changing
+
+`tail -n 5 blastx.outfmt6` @ 20180627 08:00
+
+```
+TR65359|c0_g1_i7_P-damicornis_Seneca2015	CE034_RAT	33.803	71	30	1	641	802	245	315	0.091	40.0
+TR65359|c0_g1_i8_P-damicornis_Seneca2015	CE034_HUMAN	26.230	610	314	23	89	1612	1	576	9.06e-44	170
+TR65359|c0_g2_i1_P-damicornis_Seneca2015	EBPL_MOUSE	48.696	115	18	2	759	415	120	193	1.76e-22	95.1
+TR65359|c0_g1_i9_P-damicornis_Seneca2015	CE034_HUMAN	25.697	323	145	8	89	802	1	313	1.41e-20	100
+TR65359|c0_g1_i9_P-damicornis_Seneca2015	CE034_HUMAN	28.409	264	157	13	1104	1859	333	576	9.16e-16	85.1
+```
+
+`tail -n 5 blastx.outfmt6` @ 20180627 16:19
+```
+TR181645|c0_g1_i1_P-damicornis_Seneca2015	Y981_METJA	32.653	49	31	1	438	292	11	57	2.4	31.6
+TR181646|c0_g1_i1_P-damicornis_Seneca2015	BGLR_MOUSE	30.556	72	29	3	110	298	377	436	7.5	30.4
+TR181646|c0_g2_i1_P-damicornis_Seneca2015	SNX17_PONAB	39.394	33	20	0	99	1	321	353	5.9	30.4
+TR181647|c0_g1_i1_P-damicornis_Seneca2015	RPIA_CHLSY	28.571	105	51	2	8	304	98	184	0.34	35.4
+TR181648|c0_g1_i1_P-damicornis_Seneca2015	TAL_PARD8	48.485	33	15	1	158	66	14	46	0.93	30.8
+```
+
+The tail has not changed at 16:19, so it is done!
+
+
+##### Search Transdecoder-predicted proteins (blastp)
+
+`conda install transdecoder`
+
 `TransDecoder.LongOrfs -t ../P_damicornis_transcriptome_Seneca2015.fasta`
 
-`nohup ncbi-blast-2.7.1+/bin/blastp -query P_damicornis_transcriptome_Seneca2015.fasta.transdecoder_dir/longest_orfs.pep -db uniprot_sprot.pep -num_threads 40 -max_target_seqs 1 -outfmt 6 > blastp.outfmt6`
+`nohup ncbi-blast-2.7.1+/bin/blastp -query P_damicornis_transcriptome_Seneca2015.fasta.transdecoder_dir/longest_orfs.pep -db uniprot_sprot.pep -num_threads 20 -max_target_seqs 1 -outfmt 6 > blastp.outfmt6 & disown` #started at 20180627 16:22
+
+`tail -n 5 blastp.outfmt6`
+
+```
+TR181645|c0_g1_i1_P-damicornis_Seneca2015.p1	DISA_FRASN	50.000	32	14	1	36	67	73	102	4.9	30.8
+TR181646|c0_g1_i1_P-damicornis_Seneca2015.p1	LPLA_KLEP7	30.303	66	38	2	25	86	29	90	0.28	34.3
+TR181646|c0_g1_i1_P-damicornis_Seneca2015.p2	LS12A_DANRE	28.736	87	52	3	53	129	38	124	0.031	36.2
+TR181646|c0_g2_i1_P-damicornis_Seneca2015.p1	LS12A_DANRE	28.736	87	52	3	58	134	38	124	0.032	36.6
+TR181646|c0_g2_i1_P-damicornis_Seneca2015.p2	LPLA_KLEP7	30.303	66	38	2	25	86	29	90	0.24	34.3
+```
+
+### Running HMMER to identify protein domains
+
+`nohup hmmscan --cpu 15 --domtblout TrinotatePFAM.out Pfam-A.hmm P_damicornis_transcriptome_Seneca2015.fasta.transdecoder_dir/longest_orfs.pep > pfam.log & disown`
