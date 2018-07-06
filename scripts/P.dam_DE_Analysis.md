@@ -891,3 +891,7 @@ TR181646|c0_g2_i1_P-damicornis_Seneca2015.p2	LPLA_KLEP7	30.303	66	38	2	25	86	29	
 ### Running HMMER to identify protein domains
 
 `nohup hmmscan --cpu 15 --domtblout TrinotatePFAM.out Pfam-A.hmm P_damicornis_transcriptome_Seneca2015.fasta.transdecoder_dir/longest_orfs.pep > pfam.log & disown`
+
+### Transdecoder Predict
+
+`nohup TransDecoder-TransDecoder-v5.3.0/TransDecoder.Predict --cpu 15 -t ../P_damicornis_transcriptome_Seneca2015.fasta  --retain_pfam_hits TrinotatePFAM.out --retain_blastp_hits blastp.outfmt6 & disown`
