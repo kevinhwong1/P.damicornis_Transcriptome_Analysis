@@ -291,7 +291,7 @@ https://github.com/ewels/MultiQC
 pip install multiqc
 conda install -c bioconda multiqc
 multiqc .
-scp -P 2292 kwong@kitt.uri.edu:/home/kwong/Final_Project/raw/allraw/fullreads/fastqc_results/multiqc_report.html /Users/kevinwong/Documents/Projects/P.damicornis_Transcriptome_Analysis/Output/
+scp -P 2292 kwong@kitt.uri.edu:/home/kwong/Final_Project/raw/allraw/fullreads/fastqc_results/multiqc_report.html /Users/kevinwong/Documents/MyProjects/P.damicornis_Transcriptome_Analysis/Output/
 
 ```
 
@@ -312,7 +312,7 @@ do
 /home/kwong/Final_Project/raw/allraw/fullreads/adapters.fa \
 /home/kwong/Final_Project/raw/allraw/fullreads/${file}_R1_00?.fastq.gz \
 /home/kwong/Final_Project/raw/allraw/fullreads/${file}_R2_00?.fastq.gz \
--l 100 \
+-l 50 \
 -q 20 \
 -w 5 \
 -x 10 \
@@ -385,11 +385,15 @@ mv *fastqc.* fastqc_results_clean/
 https://github.com/ewels/MultiQC
 ```
 multiqc .
-mv multiqc_report.html multiqc_report_clean.html
-scp -P 2292 kwong@kitt.uri.edu:/home/kwong/Final_Project/raw/allraw/fullreads/cleaned_reads/fastqc_results_clean/multiqc_report_clean.html /Users/kevinwong/Documents/Projects/P.damicornis_Transcriptome_Analysis/Output/
+mv multiqc_report_1.html multiqc_report_clean.html
 ```
 
-#### Multiqc report summary of trimmed reads
+##### To export, run this command on your computer, not KITT!
+```
+scp -P 2292 kwong@kitt.uri.edu:/home/kwong/Final_Project/raw/allraw/fullreads/cleaned_reads/fastqc_results_clean/multiqc_report_clean.html /Users/kevinwong/MyProjects/P.damicornis_Transcriptome_Analysis/Output
+```
+
+#### Multiqc report summary of trimmed reads (Update with new trimming)
 
 ![cleansq](https://github.com/kevinhwong1/P.damicornis_Transcriptome_Analysis/blob/master/Output/clean_fastqc_sq.png)
 This graph is looking at the mean quality score across the read. The trimmed reads all have decent quality scores.
@@ -814,6 +818,14 @@ tar xvf hmmer.tar.gz
 
 wget http://www.cbs.dtu.dk/download/C4E1319A-6B3D-11E8-8678-5A6A465A7DCF/signalp-4.1f.Linux.tar.gz -O signalp-4.1f.Linux.tar.gz
 tar xvf signalp-4.1f.Linux.tar.gz
+
+## have to apply for liscence from website
+wget http://www.cbs.dtu.dk/download/B6AB0FC6-2A62-11E9-9F3B-C3B5B9CD16B5/rnammer-1.2.src.tar.Z -O rnammer-1.2.src.tar.Z
+tar xvf rnammer-1.2.src.tar.Z
+
+## have to apply for liscence from website
+wget http://www.cbs.dtu.dk/download/0454CBA2-2AF6-11E9-BEBC-7FEFB9CD16B5/tmhmm-2.0c.Linux.tar.gz -O tmhmm-2.0c.Linux.tar.gz
+tar xvf tmhmm-2.0c.Linux.tar.gz
 ```
 #### Loading required databases
 
@@ -895,3 +907,55 @@ TR181646|c0_g2_i1_P-damicornis_Seneca2015.p2	LPLA_KLEP7	30.303	66	38	2	25	86	29	
 ### Transdecoder Predict
 
 `nohup TransDecoder-TransDecoder-v5.3.0/TransDecoder.Predict --cpu 15 -t ../P_damicornis_transcriptome_Seneca2015.fasta  --retain_pfam_hits TrinotatePFAM.out --retain_blastp_hits blastp.outfmt6 & disown`
+
+### Run SignalP to predict signal peptides
+
+`cd signalp-4.1`
+
+`nano signalp`
+
+edited environment to `$ENV{SIGNALP} =
+ '/home/kwong/Final_Project/raw/allraw/fullreads/cleaned_reads/annotation/signalp-4.1'` and max number of sequences per run to `$MAX_ALLOWED_ENTRIES=1000000`
+
+
+`cd ..`
+
+`signalp-4.1/signalp -f short -n signalp.out P_damicornis_transcriptome_Seneca2015.fasta.transdecoder_dir/longest_orfs.pep > sigP.log`
+
+to check the status:
+`tail -n 5 signalp.out` @ 20190206 15:43
+
+```
+TR181569|c0_g1_i1_P-damicornis_Seneca2015.p1	SignalP-4.1	SIGNAL	1	22	0.788	.	.	YES
+TR181590|c0_g1_i1_P-damicornis_Seneca2015.p1	SignalP-4.1	SIGNAL	1	21	0.464	.	.	YES
+TR181591|c0_g1_i1_P-damicornis_Seneca2015.p1	SignalP-4.1	SIGNAL	1	16	0.915	.	.	YES
+TR181601|c0_g1_i1_P-damicornis_Seneca2015.p1	SignalP-4.1	SIGNAL	1	26	0.737	.	.	YES
+TR181613|c0_g1_i1_P-damicornis_Seneca2015.p2	SignalP-4.1	SIGNAL	1	21	0.528	.	.	YES
+```
+has not changed @ 20190206 16:58
+
+### Run RNAMMER 1.2 to identify rRNA transcripts
+Used `nano rnammer` to change the following line in the script:
+```
+# the path of the program
+my $INSTALL_PATH = "/home/kwong/Final_Project/raw/allraw/fullreads/cleaned_reads/annotation"
+```
+`nohup Trinotate-Trinotate-v3.1.1/util/rnammer_support/RnammerTranscriptome.pl --transcriptome /home/kwong/Final_Project/raw/allraw/fullreads/cleaned_reads/P_damicornis_transcriptome_Seneca2015.fasta --path_to_rnammer /home/kwong/Final_Project/raw/allraw/fullreads/cleaned_reads/annotation/rnammer > rnammer.log`
+- did not work, need to figure out the the following error:
+```
+Error, cmd: perl /home/kwong/Final_Project/raw/allraw/fullreads/cleaned_reads/annotation/rnammer -S euk -m tsu,lsu,ssu -gff tmp.superscaff.rnammer.gff < transcriptSuperScaffold.fasta died with ret 256 at Trinotate-Trinotate-v3.1.1/util/rnammer_support/RnammerTranscriptome.pl line 80.
+```
+
+### Run tmhmm to identify transmembrane
+
+Used `nano tmhmm-2.0c/bin/tmhmm` to change the following line in the script:
+```
+# full path to the main directory of the software
+#$opt_basedir = "/home/kwong/Final_Project/raw/allraw/fullreads/cleaned_reads/annotation/tmhmm-2.0c"
+```
+`tmhmm-2.0c/bin/tmhmm --short < /home/kwong/Final_Project/raw/allraw/fullreads/cleaned_reads/annotation/P_damicornis_transcriptome_Seneca2015.fasta.transdecoder.pep > tmhmm.out`
+
+- not working either, has the following error:
+```
+-bash: tmhmm-2.0c/bin/tmhmm: /usr/local/bin/perl: bad interpreter: No such file or directory
+```
