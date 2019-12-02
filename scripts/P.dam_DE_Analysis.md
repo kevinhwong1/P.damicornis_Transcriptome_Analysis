@@ -408,6 +408,7 @@ The trimmed data looks good according to the fastqc results, therefore we can mo
 
 ### Aligning reads to reference transcriptome (Script from E. Roberts)
 https://github.com/erinroberts/apoptosis_data_pipeline/blob/master/Streamlined%20Pipeline%20Tutorial/Apoptosis_Pipeline_Tutorial_with_Reduced_Dataset.Rmd
+* used reference P. damicornis transcriptome from Maui 2015
 
 `conda install -c bioconda hisat2`  
 `nano HISAT2.sh`
